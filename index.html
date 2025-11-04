@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LBO & Valuation Calculator — James Minnehan</title>
+  <meta name="description" content="Free LBO, DCF, and Multiples valuation calculator with sliders. Compute MOIC, IRR, enterprise value, and equity value interactively."/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="index,follow" />
+  <!-- Open Graph for social preview -->
+  <meta property="og:title" content="LBO & Valuation Calculator — James Minnehan" />
+  <meta property="og:description" content="Interactive LBO, DCF, and Multiples-based valuation calculator." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1554224155-3a589877462f?q=80&w=1200&auto=format&fit=crop" />
+
+  <!-- Chart.js (for charts) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root { --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --primary:#0ea5e9; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    header{background:var(--card);border-bottom:1px solid var(--line);padding:48px 16px;text-align:center}
+    h1{margin:0 0 8px;font-size:32px}
+    .sub{margin:0;color:var(--muted)}
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+    .tab{padding:10px 14px;border:1px solid var(--line);background:var(--card);border-radius:999px;cursor:pointer}
+    .tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .row{display:flex;align-items:center;gap:8px;margin:8px 0}
+    .row label{flex:1}
+    input[type="number"], input[type="text"]{width:130px;padding:8px;border:1px solid var(--line);border-radius:10px}
+    input[type="range"]{flex:1}
+    .btn{background:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .metric{border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff}
+    .muted{color:var(--muted)}
+    footer{text-align:center;color:var(--muted);padding:24px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <h1>💼 LBO & Valuation Calculator</h1>
+  <p class="sub">Interactive LBO / DCF / Multiples — built by James Minnehan</p>
+</header>
+
+<div class="wrap">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="lbo">LBO</button>
+    <button class="tab" data-tab="dcf">DCF</button>
+    <button class="tab" data-tab="multiples">Multiples</button>
+    <a class="tab" href="#about">About</a>
+  </div>
+
+  <!-- LBO -->
+  <section id="lbo" class="card">
+    <h2>LBO Simulator</h2>
+    <div class="grid">
+      <div>
+        <div class="row"><label>Purchase Price (EV, $MM)</label>
+          <input id="lbo_pp_num" type="number" value="500" step="10">
+          <input id="lbo_pp" type="range" min="10" max="10000" step="10" value="500">
+        </div>
+        <div class="row"><label>Entry EBITDA Multiple (x)</label>
+          <input id="lbo_entry_num" type="number" value="10" step="0.5">
+          <input id="lbo_entry" type="range" min="1" max="30" step="0.5" value="10">
+        </div>
+        <div class="row"><label>Exit EBITDA Multiple (x)</label>
+          <input id="lbo_exit_num" type="number" value="12" step="0.5">
+          <input id="lbo_exit" type="range" min="1" max="30" step="0.5" value="12">
+        </div>
+        <div class="row"><label>Debt Financing (% EV)</label>
+          <input id="lbo_debt_num" type="number" value="60" step="1">
+          <input id="lbo_debt" type="range" min="0" max="90" step="1" value="60">
+        </div>
+        <div class="row"><label>Holding Period (years)</label>
+          <input id="lbo_years_num" type="number" value="5" step="1">
+          <input id="lbo_years" type="range" min="1" max="10" step="1" value="5">
+        </div>
+        <div class="row"><label>EBITDA Growth (%)</label>
+          <input id="lbo_growth_num" type="number" value="5" step="0.5">
+          <input id="lbo_growth" type="range" min="-50" max="50" step="0.5" value="5">
+        </div>
+        <div class="row"><label>Interest Rate on Debt (%)</label>
+          <input id="lbo_rate_num" type="number" value="7" step="0.25">
+          <input id="lbo_rate" type="range" min="0" max="25" step="0.25" value="7">
+        </div>
+        <div class="row">
+          <label><input id="lbo_amortize" type="checkbox" checked> Amortize debt evenly</label>
+        </div>
+        <button class="btn" id="lbo_run">Run LBO ✅</button>
+        <p class="muted">Teaching model: ignores taxes, capex, WC, fees.</p>
+      </div>
+
+      <div>
+        <div class="metrics">
+          <div class="metric"><div class="muted">Equity Invested</div><div id="m_equity">$—</div></div>
+          <div class="metric"><div class="muted">Exit EV</div><div id="m_exit">$—</div></div>
+          <div class="metric"><div class="muted">MOIC</div><div id="m_moic">—</div></div>
+          <div class="metric"><div class="muted">IRR</div><div id="m_irr">—</div></div>
+        </div>
+        <canvas id="chartEbitda" style="margin-top:12px"></canvas>
+        <canvas id="chartDebt" style="margin-top:12px"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- DCF -->
+  <section id="dcf" class="card" style="display:none">
+    <h2>DCF (Simplified)</h2>
+    <div class="grid">
+      <div>
+        <div class="row"><label>Year 0 Revenue ($MM)</label>
+          <input id="dcf_rev_num" type="number" value="200" step="10">
+          <input id="dcf_rev" type="range" min="10" max="5000" step="10" value="200">
+        </div>
+        <div class="row"><label>Revenue Growth (%)</label>
+          <input id="dcf_growth_num" type="number" value="6" step="0.5">
+          <input id="dcf_growth" type="range" min="-20" max="40" step="0.5" value="6">
+        </div>
+        <div class="row"><label>EBITDA Margin (%)</label>
+          <input id="dcf_margin_num" type="number" value="25" step="1">
+          <input id="dcf_margin" type="range" min="0" max="60" step="1" value="25">
+        </div>
+        <div class="row"><label>Tax Rate (%)</label>
+          <input id="dcf_tax_num" type="number" value="25" step="1">
+          <input id="dcf_tax" type="range" min="0" max="50" step="1" value="25">
+        </div>
+        <div class="row"><label>WACC (%)</label>
+          <input id="dcf_wacc_num" type="number" value="10" step="0.5">
+          <input id="dcf_wacc" type="range" min="4" max="20" step="0.5" value="10">
+        </div>
+        <div class="row"><label>Terminal Growth (%)</label>
+          <input id="dcf_tg_num" type="number" value="2.5" step="0.1">
+          <input id="dcf_tg" type="range" min="0" max="6" step="0.1" value="2.5">
+        </div>
+        <div class="row"><label>Projection Years</label>
+          <input id="dcf_years_num" type="number" value="5" step="1">
+          <input id="dcf_years" type="range" min="3" max="10" step="1" value="5">
+        </div>
+        <button class="btn" id="dcf_run">Run DCF ✅</button>
+      </div>
+      <div>
+        <div class="metrics">
+          <div class="metric"><div class="muted">Enterprise Value (DCF)</div><div id="dcf_ev">$—</div></div>
+          <div class="metric"><div class="muted">Sum PV(FCF)</div><div id="dcf_pv">$—</div></div>
+          <div class="metric"><div class="muted">PV(Terminal)</div><div id="dcf_tpv">$—</div></div>
+          <div class="metric"><div class="muted">Years</div><div id="dcf_years_disp">—</div></div>
+        </div>
+        <canvas id="chartFCF" style="margin-top:12px"></canvas>
+      </div>
+    </div>
+    <p class="muted">Simplified: FCF ≈ EBITDA × (1 – tax). Ignores D&A, capex, working capital.</p>
+  </section>
+
+  <!-- Multiples -->
+  <section id="multiples" class="card" style="display:none">
+    <h2>Multiples Valuation</h2>
+    <div class="grid">
+      <div>
+        <div class="row"><label>Current EBITDA ($MM)</label>
+          <input id="mult_ebitda_num" type="number" value="50" step="1">
+          <input id="mult_ebitda" type="range" min="1" max="1000" step="1" value="50">
+        </div>
+        <div class="row"><label>EV / EBITDA Multiple (x)</label>
+          <input id="mult_multiple_num" type="number" value="10" step="0.5">
+          <input id="mult_multiple" type="range" min="1" max="40" step="0.5" value="10">
+        </div>
+        <div class="row"><label>Net Debt ($MM)</label>
+          <input id="mult_debt_num" type="number" value="200" step="10">
+          <input id="mult_debt" type="range" min="-500" max="2000" step="10" value="200">
+        </div>
+        <button class="btn" id="mult_run">Calculate ✅</button>
+      </div>
+      <div>
+        <div class="metrics">
+          <div class="metric"><div class="muted">Enterprise Value</div><div id="mult_ev">$—</div></div>
+          <div class="metric"><div class="muted">Equity Value</div><div id="mult_equity">$—</div></div>
+          <div class="metric"><div class="muted">Implied EV / EBITDA</div><div id="mult_ratio">—</div></div>
+          <div class="metric"><div class="muted">Inputs OK?</div><div id="mult_ok">—</div></div>
+        </div>
+        <p class="muted">Equity = EV – Net Debt (negative net debt ⇒ net cash).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="card">
+    <h2>About this Project</h2>
+    <p>This site helps you explore how leverage, growth, and exit assumptions drive returns
+      (MOIC & IRR) and value (DCF & Multiples). Built as a finance + coding showcase.</p>
+  </section>
+</div>
+
+<footer>© <span id="y"></span> James Minnehan • Built with HTML/JS & Chart.js</footer>
+
+<script>
+  document.getElementById('y').textContent = new Date().getFullYear();
+
+  // ---- tiny helpers ----
+  const fmt = n => isFinite(n) ? (n>=1e3? "$"+n.toLocaleString(undefined,{maximumFractionDigits:1})+" MM" : "$"+n.toFixed(2)+" MM") : "—";
+  const fmts = n => isFinite(n) ? n.toLocaleString(undefined,{maximumFractionDigits:2}) : "—";
+  function link(idRange, idNum){
+    const r=document.getElementById(idRange), n=document.getElementById(idNum);
+    r.addEventListener('input', ()=> n.value = r.value);
+    n.addEventListener('input', ()=> r.value = n.value);
+  }
+
+  // link all range<->number pairs
+  ["lbo_pp","lbo_entry","lbo_exit","lbo_debt","lbo_years","lbo_growth","lbo_rate",
+   "dcf_rev","dcf_growth","dcf_margin","dcf_tax","dcf_wacc","dcf_tg","dcf_years",
+   "mult_ebitda","mult_multiple","mult_debt"].forEach(id => link(id, id+"_num"));
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const t=btn.dataset.tab; if(!t) return;
+      document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      ["lbo","dcf","multiples"].forEach(x=>document.getElementById(x).style.display = x===t?"block":"none");
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+
+  // ---- IRR from cash flows (Newton's method) ----
+  function irr(cashflows){
+    let rate = 0.2; // 20% initial guess
+    for(let i=0;i<100;i++){
+      let npv=0, dnpv=0;
+      for(let t=0;t<cashflows.length;t++){
+        const denom = Math.pow(1+rate, t);
+        npv += cashflows[t]/denom;
+        if(t>0) dnpv -= t*cashflows[t]/(Math.pow(1+rate, t+1));
+      }
+      const newRate = rate - npv/dnpv;
+      if(!isFinite(newRate)) break;
+      if(Math.abs(newRate - rate) < 1e-7) return newRate;
+      rate = newRate;
+    }
+    return NaN;
+  }
+
+  // ---- LBO ----
+  let chartE=null, chartD=null;
+  document.getElementById('lbo_run').addEventListener('click', ()=>{
+    const EV= +lbo_pp.value,
+          entry= +lbo_entry.value,
+          exitM= +lbo_exit.value,
+          debtPct= +lbo_debt.value/100,
+          years= +lbo_years.value,
+          g= +lbo_growth.value/100,
+          rate= +lbo_rate.value/100,
+          amort= document.getElementById('lbo_amortize').checked;
+
+    const ebitda0 = EV/entry;
+    const debt0 = EV*debtPct;
+    const equity0 = EV - debt0;
+
+    const yrs = [...Array(years+1).keys()];
+    const ebitda = yrs.map(t => ebitda0*Math.pow(1+g,t));
+
+    const debt = new Array(years+1).fill(0); debt[0]=debt0;
+    const interest = new Array(years+1).fill(0);
+    const annualPrin = amort ? debt0/years : 0;
+    for(let t=1;t<=years;t++){
+      interest[t] = debt[t-1]*rate;
+      const principal = amort ? Math.min(annualPrin, debt[t-1]) : 0;
+      debt[t] = Math.max(debt[t-1]-principal, 0);
+    }
+
+    const exitEV = ebitda[years]*exitM;
+    const equityExit = exitEV - debt[years];
+    const moic = equityExit / equity0;
+    const irrPct = irr([-equity0, ...Array(years-1).fill(0), equityExit]) * 100;
+
+    // metrics
+    m_equity.textContent = fmt(equity0);
+    m_exit.textContent = fmt(exitEV);
+    m_moic.textContent = isFinite(moic) ? moic.toFixed(2)+"x" : "—";
+    m_irr.textContent = isFinite(irrPct) ? irrPct.toFixed(2)+"%" : "—";
+
+    // charts
+    const ctxE = document.getElementById('chartEbitda');
+    const ctxD = document.getElementById('chartDebt');
+    if(chartE) chartE.destroy(); if(chartD) chartD.destroy();
+    chartE = new Chart(ctxE, {
+      type:'line',
+      data:{labels:yrs, datasets:[{label:'EBITDA ($MM)', data:ebitda}]},
+      options:{responsive:true, scales:{y:{beginAtZero:false}}}
+    });
+    chartD = new Chart(ctxD, {
+      type:'line',
+      data:{labels:yrs, datasets:[{label:'Debt Balance ($MM)', data:debt}]},
+      options:{responsive:true, scales:{y:{beginAtZero:true}}}
+    });
+  });
+
+  // ---- DCF ----
+  let chartF=null;
+  document.getElementById('dcf_run').addEventListener('click', ()=>{
+    const rev0= +dcf_rev.value,
+          gr= +dcf_growth.value/100,
+          mar= +dcf_margin.value/100,
+          tax= +dcf_tax.value/100,
+          wacc= +dcf_wacc.value/100,
+          tg= +dcf_tg.value/100,
+          yrs= +dcf_years.value;
+
+    const years = [...Array(yrs).keys()].map(i=>i+1);
+    const rev = years.map(t=> rev0*Math.pow(1+gr,t));
+    const ebitda = rev.map(r=> r*mar);
+    const fcf = ebitda.map(e=> e*(1-tax)); // simple proxy
+    const disc = years.map(t=> Math.pow(1+wacc, t));
+    const pv_fcf = fcf.map((c,i)=> c/disc[i]);
+    const fcf_next = fcf[fcf.length-1]*(1+gr);
+    const tv = fcf_next*(1+tg)/(wacc - tg);
+    const pv_tv = tv / Math.pow(1+wacc, yrs);
+    const ev = pv_fcf.reduce((a,b)=>a+b,0) + pv_tv;
+
+    dcf_ev.textContent = fmt(ev);
+    dcf_pv.textContent = fmt(pv_fcf.reduce((a,b)=>a+b,0));
+    dcf_tpv.textContent = fmt(pv_tv);
+    dcf_years_disp.textContent = yrs;
+
+    const ctx = document.getElementById('chartFCF');
+    if(chartF) chartF.destroy();
+    chartF = new Chart(ctx, {
+      type:'bar',
+      data:{labels:years, datasets:[{label:'FCF ($MM)', data:fcf}]},
+      options:{responsive:true, scales:{y:{beginAtZero:true}}}
+    });
+  });
+
+  // ---- Multiples ----
+  document.getElementById('mult_run').addEventListener('click', ()=>{
+    const e = +mult_ebitda.value, m = +mult_multiple.value, nd = +mult_debt.value;
+    const ev = e*m; const eq = ev - nd;
+    mult_ev.textContent = fmt(ev);
+    mult_equity.textContent = fmt(eq);
+    mult_ratio.textContent = (ev/e).toFixed(2)+"x";
+    mult_ok.textContent = (e>0 && m>0) ? "Yes" : "Check inputs";
+  });
+</script>
+</body>
+</html>
